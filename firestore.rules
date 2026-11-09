@@ -1,0 +1,192 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 150)) &&
+             (!('theme' in data) || (data.theme is string && data.theme.size() <= 20)) &&
+             (!('language' in data) || (data.language is string && data.language.size() <= 10)) &&
+             (!('hapticFeedback' in data) || data.hapticFeedback is bool);
+    }
+
+    function isValidFavorite(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.toolId is string && data.toolId.size() <= 64 &&
+             data.toolName is string && data.toolName.size() <= 100 &&
+             (!('category' in data) || (data.category is string && data.category.size() <= 50)) &&
+             (!('iconName' in data) || (data.iconName is string && data.iconName.size() <= 50)) &&
+             data.addedAt is timestamp && data.addedAt <= request.time;
+    }
+
+    function isValidHistory(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.toolId is string && data.toolId.size() <= 64 &&
+             data.toolName is string && data.toolName.size() <= 100 &&
+             (!('category' in data) || (data.category is string && data.category.size() <= 50)) &&
+             data.inputSummary is string && data.inputSummary.size() <= 500 &&
+             data.resultSummary is string && data.resultSummary.size() <= 500 &&
+             data.timestamp is timestamp && data.timestamp <= request.time;
+    }
+
+    function isValidTodo(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+             (!('description' in data) || (data.description is string && data.description.size() <= 1000)) &&
+             data.isCompleted is bool &&
+             (!('priority' in data) || (data.priority is string && data.priority.size() <= 20)) &&
+             (!('category' in data) || (data.category is string && data.category.size() <= 50)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidNote(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.title is string && data.title.size() <= 200 &&
+             data.content is string && data.content.size() <= 10000 &&
+             (!('category' in data) || (data.category is string && data.category.size() <= 50)) &&
+             (!('colorHex' in data) || (data.colorHex is string && data.colorHex.size() <= 16)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidExpense(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 100 &&
+             data.amount is number && data.amount >= 0 &&
+             data.category is string && data.category.size() <= 50 &&
+             (!('currency' in data) || (data.currency is string && data.currency.size() <= 10)) &&
+             (!('date' in data) || (data.date is string && data.date.size() <= 30)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId;
+      allow list: if false;
+
+      allow create: if isSignedIn() && request.auth.uid == userId &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll(['userId', 'createdAt']) &&
+                       incoming().keys().hasOnly(['userId', 'displayName', 'email', 'theme', 'language', 'hapticFeedback', 'createdAt', 'updatedAt']) &&
+                       incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isSignedIn() && request.auth.uid == userId &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'email', 'theme', 'language', 'hapticFeedback', 'updatedAt']);
+
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+
+      match /favorites/{favId} {
+        allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() && request.auth.uid == userId &&
+                         isValidId(favId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'toolId', 'toolName', 'addedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'toolId', 'toolName', 'category', 'iconName', 'addedAt']) &&
+                         isValidFavorite(incoming());
+
+        allow update: if false;
+
+        allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(favId);
+      }
+
+      match /history/{historyId} {
+        allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() && request.auth.uid == userId &&
+                         isValidId(historyId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'toolId', 'toolName', 'inputSummary', 'resultSummary', 'timestamp']) &&
+                         incoming().keys().hasOnly(['userId', 'toolId', 'toolName', 'category', 'inputSummary', 'resultSummary', 'timestamp']) &&
+                         isValidHistory(incoming());
+
+        allow update: if false;
+
+        allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(historyId);
+      }
+
+      match /todos/{todoId} {
+        allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() && request.auth.uid == userId &&
+                         isValidId(todoId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'title', 'isCompleted', 'createdAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'description', 'isCompleted', 'priority', 'category', 'createdAt', 'updatedAt']) &&
+                         isValidTodo(incoming());
+
+        allow update: if isSignedIn() && request.auth.uid == userId &&
+                         isValidId(todoId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidTodo(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'isCompleted', 'priority', 'category', 'updatedAt']);
+
+        allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(todoId);
+      }
+
+      match /notes/{noteId} {
+        allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() && request.auth.uid == userId &&
+                         isValidId(noteId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'title', 'content', 'createdAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'content', 'category', 'colorHex', 'createdAt', 'updatedAt']) &&
+                         isValidNote(incoming());
+
+        allow update: if isSignedIn() && request.auth.uid == userId &&
+                         isValidId(noteId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidNote(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'content', 'category', 'colorHex', 'updatedAt']);
+
+        allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(noteId);
+      }
+
+      match /expenses/{expenseId} {
+        allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() && request.auth.uid == userId &&
+                         isValidId(expenseId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'title', 'amount', 'category', 'createdAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'amount', 'category', 'currency', 'date', 'createdAt']) &&
+                         isValidExpense(incoming());
+
+        allow update: if isSignedIn() && request.auth.uid == userId &&
+                         isValidId(expenseId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidExpense(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'amount', 'category', 'currency', 'date']);
+
+        allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(expenseId);
+      }
+    }
+  }
+}

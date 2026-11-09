@@ -1,0 +1,121 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile and synced settings in Nexora",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "theme": { "type": "string" },
+        "language": { "type": "string" },
+        "hapticFeedback": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "createdAt"]
+    },
+    "FavoriteTool": {
+      "title": "FavoriteTool",
+      "description": "User favorite tools bookmark",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "toolId": { "type": "string" },
+        "toolName": { "type": "string" },
+        "category": { "type": "string" },
+        "iconName": { "type": "string" },
+        "addedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "toolId", "toolName", "addedAt"]
+    },
+    "HistoryRecord": {
+      "title": "HistoryRecord",
+      "description": "Calculation and tool usage history entry",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "toolId": { "type": "string" },
+        "toolName": { "type": "string" },
+        "category": { "type": "string" },
+        "inputSummary": { "type": "string" },
+        "resultSummary": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "toolId", "toolName", "inputSummary", "resultSummary", "timestamp"]
+    },
+    "TodoTask": {
+      "title": "TodoTask",
+      "description": "User to-do item",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "isCompleted": { "type": "boolean" },
+        "priority": { "type": "string" },
+        "category": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "isCompleted", "createdAt"]
+    },
+    "NoteItem": {
+      "title": "NoteItem",
+      "description": "User rich text note",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "category": { "type": "string" },
+        "colorHex": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "content", "createdAt"]
+    },
+    "ExpenseRecord": {
+      "title": "ExpenseRecord",
+      "description": "User expense tracking item",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "amount": { "type": "number" },
+        "category": { "type": "string" },
+        "currency": { "type": "string" },
+        "date": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "amount", "category", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile and preferences"
+    },
+    "/users/{userId}/favorites/{favId}": {
+      "schema": "FavoriteTool",
+      "description": "Bookmarked favorite utility tools"
+    },
+    "/users/{userId}/history/{historyId}": {
+      "schema": "HistoryRecord",
+      "description": "Utility usage and calculation logs"
+    },
+    "/users/{userId}/todos/{todoId}": {
+      "schema": "TodoTask",
+      "description": "Productivity todo list tasks"
+    },
+    "/users/{userId}/notes/{noteId}": {
+      "schema": "NoteItem",
+      "description": "Productivity notes manager items"
+    },
+    "/users/{userId}/expenses/{expenseId}": {
+      "schema": "ExpenseRecord",
+      "description": "Productivity expense tracking entries"
+    }
+  }
+}

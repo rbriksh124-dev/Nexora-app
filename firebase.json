@@ -1,0 +1,14 @@
+{
+  "firestore": {
+    "database": "ai-studio-android-nexora-67f63a8c-3063-44d3-9cd3-3052bcfc0b88",
+    "rules": "firestore.rules"
+  },
+  "emulators": {
+    "firestore": {
+      "port": 8085
+    },
+    "auth": {
+      "port": 9099
+    }
+  }
+}

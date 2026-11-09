@@ -1,0 +1,6 @@
+{
+  "name": "NEXORA",
+  "description": "One App. Endless Possibilities. Premium all-in-one utility super app with calculators, converters, text tools, QR/barcodes, image tools, dev utilities, productivity, and life tools.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
