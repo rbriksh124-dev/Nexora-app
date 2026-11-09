@@ -45,6 +45,7 @@ jobs:
 
       - name: Create temporary debug keystore
         run: |
+          touch .env
           if [ -f "./debug.keystore" ]; then
             echo "debug.keystore already exists. Skipping creation."
           else
@@ -143,6 +144,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG_NAME="debug-apk-build-${{ github.run_number }}-${{ github.run_attempt }}"
+          RELEASE_TITLE="Debug APK Build #${{ github.run_number }}"
           RELEASE_OUTCOME="${{ steps.publish_release.outcome }}"
           if [ "$RELEASE_OUTCOME" = "success" ]; then
             echo "GitHub Release publishing succeeded!"
@@ -150,7 +152,7 @@ jobs:
             RELEASE_URL=$(gh release view "$TAG_NAME" --json url -q .url)
             ASSET_NAME="${{ steps.prepare_asset.outputs.filename }}"
             echo "Release Tag: $TAG_NAME"
-            echo "Release Title: Debug APK Build #${{ github.run_number }}"
+            echo "Release Title: $RELEASE_TITLE"
             echo "Release Page: $RELEASE_URL"
             echo "Asset File: $ASSET_NAME"
 
